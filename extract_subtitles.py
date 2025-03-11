@@ -24,29 +24,24 @@ def clean_subtitles(vtt_file, output_file="clean_subtitles.txt"):
     with open(vtt_file, "r", encoding="utf-8") as file:
         lines = file.readlines()
 
-    cleaned_lines = []
+    cleaned_lines = [""]
     for line in lines:
         line = line.strip()
 
-        # Skip "WEBVTT" header and metadata
-        if line.startswith("WEBVTT") or "Kind:" in line or "Language:" in line:
-            continue
-
         # Remove timestamp lines like "00:00:02.149 --> 00:00:04.789"
-        if "-->" in line:
+        if line == "" or "-->" in line:
             continue
 
         # Remove text enclosed in <...> including tags like <c>
         line = re.sub(r"<.*?>", "", line)
 
         # Add cleaned line if not empty
-        if line:
+        if line!=cleaned_lines[-1]: # a lot of lines are repated in the extracted subtitles
             cleaned_lines.append(line)
 
     # Join lines into coherent speech
-    cleaned_text = " ".join(cleaned_lines)
+    cleaned_text = " ".join(cleaned_lines[4:])
     os.remove("video.en.vtt")
-    json_script = {"script": cleaned_text}
     return cleaned_text
 
 
@@ -54,16 +49,4 @@ def extract_subtitles(video_url):
     download_subtitles(video_url)
     return clean_subtitles("video.en.vtt")
 
-app = Flask(__name__)
-
-@app.route('/extract_subtitles', methods=['POST'])
-def extract_subtitles_api():
-    data = request.get_json()
-    video_url = data.get('video_url')
-    if not video_url:
-        return jsonify({"error": "Missing video_url"}), 400
-    result = extract_subtitles(video_url)
-    return jsonify(result)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+# extract_subtitles("https://www.youtube.com/watch?v=C82fqH5QRhc")
