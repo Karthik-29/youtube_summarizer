@@ -1,5 +1,7 @@
 import re
 import yt_dlp  # Ensure yt-dlp is installed
+import os
+from flask import Flask, request, jsonify
 
 def download_subtitles(video_url, output_file="video.en.vtt"):
     """ Downloads English subtitles from a YouTube video. """
@@ -17,7 +19,7 @@ def download_subtitles(video_url, output_file="video.en.vtt"):
     print(f"Subtitles downloaded: {output_file}")
 
 def clean_subtitles(vtt_file, output_file="clean_subtitles.txt"):
-    """ Removes timestamps but keeps all subtitle text intact. """
+    """Removes timestamps, tags, and cleans up subtitle text."""
 
     with open(vtt_file, "r", encoding="utf-8") as file:
         lines = file.readlines()
@@ -34,31 +36,34 @@ def clean_subtitles(vtt_file, output_file="clean_subtitles.txt"):
         if "-->" in line:
             continue
 
-        # Keep all other text
-        cleaned_lines.append(line)
+        # Remove text enclosed in <...> including tags like <c>
+        line = re.sub(r"<.*?>", "", line)
+
+        # Add cleaned line if not empty
+        if line:
+            cleaned_lines.append(line)
 
     # Join lines into coherent speech
     cleaned_text = " ".join(cleaned_lines)
-
-    # Remove extra spaces
-    cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
-
-    # Save to a text file
-    with open(output_file, "w", encoding="utf-8") as file:
-        file.write(cleaned_text)
-
-    print(f"Cleaned subtitles saved to {output_file}")
+    os.remove("video.en.vtt")
+    json_script = {"script": cleaned_text}
     return cleaned_text
 
-# === RUN THE FULL PIPELINE ===
-video_url = input("Enter YouTube video URL: ")
 
-# Step 1: Download subtitles
-download_subtitles(video_url)
+def extract_subtitles(video_url):
+    download_subtitles(video_url)
+    return clean_subtitles("video.en.vtt")
 
-# Step 2: Clean the subtitles
-cleaned_text = clean_subtitles("video.en.vtt")
+app = Flask(__name__)
 
-# Step 3: Show a preview
-print("\nPreview of Cleaned Text:\n")
-print(cleaned_text[:1000])  # Print first 1000 characters as preview
+@app.route('/extract_subtitles', methods=['POST'])
+def extract_subtitles_api():
+    data = request.get_json()
+    video_url = data.get('video_url')
+    if not video_url:
+        return jsonify({"error": "Missing video_url"}), 400
+    result = extract_subtitles(video_url)
+    return jsonify(result)
+
+if __name__ == '__main__':
+    app.run(debug=True)
