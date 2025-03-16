@@ -1,7 +1,8 @@
 import re
-import yt_dlp  # Ensure yt-dlp is installed
+import yt_dlp 
 import os
 from flask import Flask, request, jsonify
+import pyperclip
 
 def download_subtitles(video_url, output_file="video.en.vtt"):
     """ Downloads English subtitles from a YouTube video. """
@@ -47,6 +48,8 @@ def clean_subtitles(vtt_file, output_file="clean_subtitles.txt"):
 
 def extract_subtitles(video_url):
     download_subtitles(video_url)
-    return clean_subtitles("video.en.vtt")
+    res = clean_subtitles("video.en.vtt")
+    pyperclip.copy(res)
+    return res
 
-# extract_subtitles("https://www.youtube.com/watch?v=C82fqH5QRhc")
+# extract_subtitles("https://www.youtube.com/watch?v=Lv8BD8xefJs")
