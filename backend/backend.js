@@ -55,6 +55,7 @@ app.post("/infer", async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "No prompt provided" });
 
     const response = await runOllama(prompt);
+    console.log("Inference complete");
     res.json({ response });
 
   } catch (err) {
@@ -78,6 +79,7 @@ app.get("/transcript", async (req, res) => {
   try {
       const transcript = await YoutubeTranscript.fetchTranscript(videoId, { lang: "en" });
       const text = transcript.map(line => line.text).join(" ");
+      console.log("Tranbscript retrieved");
       res.json({ transcript: text });
   } catch (error) {
       console.error("Error fetching subtitles:", error);
