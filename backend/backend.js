@@ -4,7 +4,16 @@ const cors = require("cors");
 const { YoutubeTranscript } = require("youtube-transcript");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",  // Allow React development server
+      "chrome-extension://*",   // Allow all Chrome extensions
+    ],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 app.use(express.json());
 
 // Function to execute ollama and return response
