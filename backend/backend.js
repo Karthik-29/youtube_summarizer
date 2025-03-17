@@ -64,26 +64,34 @@ app.post("/infer", async (req, res) => {
 });
 
 
-app.get("/transcript", async (req, res) => {
-  const { videoUrl } = req.query;
-
-  // Extract video ID from URL
-  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-  const match = videoUrl.match(regExp);
-  const videoId = match && match[7].length === 11 ? match[7] : false;
-  console.log("videoId: "+videoId);
-  if (!videoId) {
-      return res.status(400).json({ error: "Invalid YouTube URL" });
-  }
-
+app.get('/transcript', async (req, res) => {
   try {
-      const transcript = await YoutubeTranscript.fetchTranscript(videoId, { lang: "en" });
-      const text = transcript.map(line => line.text).join(" ");
-      console.log("Tranbscript retrieved");
-      res.json({ transcript: text });
+    const videoId = req.query.videoId;
+    
+    if (!videoId) {
+      return res.status(400).json({ error: 'Missing videoId parameter' });
+    }
+    
+    console.log(`Fetching transcript for video ID: ${videoId}`);
+    
+    // Get transcript directly using videoId
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    
+    if (!transcript || transcript.length === 0) {
+      return res.status(404).json({ error: 'No transcript available for this video' });
+    }
+    
+    // Process the transcript
+    const fullText = transcript
+      .map(item => item.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    return res.json({ transcript: fullText });
   } catch (error) {
-      console.error("Error fetching subtitles:", error);
-      res.status(500).json({ error: "Failed to fetch transcript" });
+    console.error('Error fetching transcript:', error);
+    return res.status(500).json({ error: error.message || 'Failed to get transcript' });
   }
 });
 
