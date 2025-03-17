@@ -127,25 +127,29 @@ export default function App() {
     });   
   };    
 
-  return (     
-    <div className={`p-6 w-full h-full rounded-lg ${theme === 'dark' ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-800'}`}>       
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      {loading ? 
-      <div className="text-center space-y-4">
-      <p className="text-lg font-medium">Summarizing video...</p>
-      {/* Skeleton loader */}
-      <div className="space-y-2">
-        <div className={`h-6 w-2/3 mx-auto rounded-md ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
-        <div className={`h-4 w-5/6 mx-auto rounded-md ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
-        <div className={`h-4 w-4/6 mx-auto rounded-md ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
-      </div>
-    </div> 
-        : 
-        summary ? 
-          <SummaryRenderer summary={summary} theme={theme} /> 
+// App.js update
+return (
+  <div className={`w-full h-full rounded-lg ${theme === 'dark' ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-800'}`}>
+    <div className="p-6">
+      <div className="scroll-container">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {loading ? 
+          <div className="text-center space-y-4">
+            <p className="text-lg font-medium">Summarizing video...</p>
+            <div className="space-y-2">
+              <div className={`h-6 w-2/3 mx-auto rounded-md ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
+              <div className={`h-4 w-5/6 mx-auto rounded-md ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
+              <div className={`h-4 w-4/6 mx-auto rounded-md ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
+            </div>
+          </div> 
           : 
-          !error ? <p>Open a YouTube video to summarize.</p> : null
-      }     
-    </div>   
-  ); 
+          summary ? 
+            <SummaryRenderer summary={summary} theme={theme} /> 
+            : 
+            !error ? <p>Open a YouTube video to summarize.</p> : null
+        }  
+      </div>
+    </div>
+  </div>
+);
 }

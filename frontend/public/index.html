@@ -11,12 +11,12 @@
       --popup-height: 500px;
     }
     
-    body {
+    html, body {
       width: var(--popup-width);
       height: var(--popup-height);
       margin: 0;
       padding: 0;
-      overflow-x: hidden;
+      overflow: hidden;
       border-radius: 8px;
     }
     
@@ -24,6 +24,13 @@
       height: 100%;
       border-radius: 8px;
       overflow: hidden;
+    }
+    
+    .scroll-container {
+      height: calc(var(--popup-height) - 48px); /* 48px for padding */
+      overflow-y: auto;
+      overflow-x: hidden;
+      border-radius: 8px;
     }
     
     /* Theme-based styling */

@@ -31,9 +31,9 @@ const SummaryRenderer = ({ summary, theme = 'light' }) => {
 
   return (
     <div className={`summary-container ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
-      <h2 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+      <h4 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
         Video Summary
-      </h2>
+      </h4>
       <div className={`summary-content prose prose-blue max-w-none ${theme === 'dark' ? 'text-gray-300 prose-invert' : 'text-gray-700'}`}>
         {renderContent()}
       </div>
