@@ -87,7 +87,7 @@ app.get('/transcript', async (req, res) => {
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
-    
+    console.log('Transcript length', fullText.length);
     return res.json({ transcript: fullText });
   } catch (error) {
     console.error('Error fetching transcript:', error);

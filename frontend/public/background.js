@@ -1,5 +1,7 @@
 const pendingRequests = {};
 
+const backendUrl = "http://localhost:8000";
+
 function extractVideoId(videoUrl) {
   const match = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
   return match && match[1] ? match[1] : null;
@@ -103,9 +105,9 @@ async function summarizeVideoInBackground(videoId) {
       console.error("Invalid video ID");
       throw new Error("Invalid video ID");
     }
-    
+
     // Log the exact endpoint being called
-    const transcriptEndpoint = `http://localhost:8000/transcript?videoId=${videoId}`;
+    const transcriptEndpoint = `${backendUrl}/transcript?videoId=${videoId}`;
     console.log("Fetching transcript from:", transcriptEndpoint);
     
     const transcriptResponse = await fetch(transcriptEndpoint);
@@ -126,12 +128,13 @@ async function summarizeVideoInBackground(videoId) {
     console.log("Transcript received, length:", transcriptData.transcript.length);
     console.log("Sending to inference API...");
 
-    const inferResponse = await fetch("http://localhost:8000/infer", {
+    inferenceEndpoint = `${backendUrl}/infer`;
+    const inferResponse = await fetch(inferenceEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         videoId: videoId,
-        prompt: "Summarize this video transcript: " + transcriptData.transcript 
+        prompt: "Summarize this youtube video transcript: " + transcriptData.transcript
       }),
     });
 
