@@ -102,7 +102,7 @@ export default function App() {
 
   const startPolling = (vId) => {
     let attempts = 0;
-    const maxAttempts = 10; // e.g. 10 attempts at 2s intervals = 20 seconds
+    const maxAttempts = 60; // e.g. 30 attempts at 1s intervals = 30 seconds
 
     pollingRef.current = setInterval(() => {
       attempts++;
@@ -128,7 +128,7 @@ export default function App() {
           }
         }
       );
-    }, 2000);
+    }, 1000);
   };
 
   const startSummarization = (vId) => {

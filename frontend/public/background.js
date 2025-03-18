@@ -96,6 +96,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
 });
 
+// Helper function to call the inference API with a prompt.
+async function callInferenceAPI(prompt) {
+  const inferenceEndpoint = `${backendUrl}/infer`;
+  const inferResponse = await fetch(inferenceEndpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!inferResponse.ok) {
+    const errorText = await inferResponse.text();
+    throw new Error(`Inference API returned ${inferResponse.status}: ${errorText}`);
+  }
+  const inferData = await inferResponse.json();
+  if (!inferData.response) {
+    throw new Error("No summary response received");
+  }
+  return inferData.response;
+}
+
 async function summarizeVideoInBackground(videoId) {
   try {
     console.log("Attempting to summarize video with ID:", videoId);
@@ -126,33 +145,43 @@ async function summarizeVideoInBackground(videoId) {
     }
 
     console.log("Transcript received, length:", transcriptData.transcript.length);
-    console.log("Sending to inference API...");
 
-    inferenceEndpoint = `${backendUrl}/infer`;
-    const inferResponse = await fetch(inferenceEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        videoId: videoId,
-        prompt: "Summarize this youtube video transcript: " + transcriptData.transcript
-      }),
-    });
+    const chunkSize = 50000;
+    let transcript = transcriptData.transcript;
+    let finalSummary = "";
+    let currentSummary = "";
 
-    if (!inferResponse.ok) {
-      const errorText = await inferResponse.text();
-      console.error("Inference API error:", inferResponse.status, errorText);
-      throw new Error(`Inference API returned ${inferResponse.status}: ${errorText}`);
+    if (transcript.length > chunkSize) {
+      console.log("Transcript exceeds chunk size, processing in chunks");
+        let chunks = [];
+        for (let i = 0; i < transcript.length; i += chunkSize) {
+          chunks.push(transcript.slice(i, i + chunkSize));
+        }
+
+        // Process each chunk independently.
+        const chunkSummaries = [];
+        for (let i = 0; i < chunks.length; i++) {
+          const prompt = "Summarize the following transcript: " + chunks[i];
+          console.log("Summarizing chunk", i + 1, "with prompt:", prompt.slice(0, 100), "...");
+          const chunkSummary = await callInferenceAPI(prompt);
+          chunkSummaries.push(chunkSummary);
+        }
+        // Combine all chunk summaries into one final summary.
+        const combinedPrompt = "Combine the following summaries into one cohesive final summary: " + chunkSummaries.join(" ");
+        console.log("Combining chunk summaries with prompt:", combinedPrompt.slice(0, 100), "...");
+        finalSummary = await callInferenceAPI(combinedPrompt);
+      } else {
+      // Process transcript normally if it's short enough.
+      const prompt = "Summarize this video transcript: " + transcript;
+      console.log("Sending prompt:", prompt.slice(0, 100), "...");
+      finalSummary = await callInferenceAPI(prompt);
     }
 
-    const inferData = await inferResponse.json();
-
-    if (inferData.response) {
-      console.log("Summary received, storing in cache");
+      console.log("Final summary received, storing in cache");
       chrome.storage.local.get(["summaryCache"], (result) => {
         const cache = result.summaryCache || {};
-        cache[videoId] = inferData.response;
+        cache[videoId] = finalSummary;
         chrome.storage.local.set({ summaryCache: cache });
-
         delete pendingRequests[videoId];
 
         chrome.notifications.create({
@@ -162,10 +191,6 @@ async function summarizeVideoInBackground(videoId) {
           message: "Your video summary is now ready! Click the extension icon to view it.",
         });
       });
-    } else {
-      console.error("No response in inference data:", inferData);
-      throw new Error("No summary response received");
-    }
   } catch (error) {
     console.error("Error in background summarization:", error);
     delete pendingRequests[videoId];
