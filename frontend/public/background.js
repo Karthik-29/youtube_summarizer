@@ -73,23 +73,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "checkStatus") {
     if (pendingRequests[videoId]) {
-      console.log("Request is pending for video:", videoId);
       sendResponse({ status: "pending" });
     } else {
       chrome.storage.local.get(["summaryCache"], (result) => {
         const cache = result.summaryCache || {};
         if (cache[videoId]) {
-          console.log("Found cached summary for video:", videoId);
-          sendResponse({ status: "complete", summary: cache[videoId] });
+          // Check if an error is stored for this video
+          if (cache[videoId].error) {
+            sendResponse({ status: "error", message: cache[videoId].error });
+          } else {
+            sendResponse({ status: "complete", summary: cache[videoId] });
+          }
         } else {
-          console.log("No summary found for video:", videoId);
           sendResponse({ status: "notStarted" });
         }
       });
     }
-
     return true;
   }
+  
 });
 
 async function summarizeVideoInBackground(videoId) {
@@ -164,12 +166,19 @@ async function summarizeVideoInBackground(videoId) {
   } catch (error) {
     console.error("Error in background summarization:", error);
     delete pendingRequests[videoId];
-    
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icon.png",
-      title: "Summary Error",
-      message: `Failed to summarize video: ${error.message}`,
+  
+    // Save the error message in the cache (or another key) to propagate the error state.
+    chrome.storage.local.get(["summaryCache"], (result) => {
+      const cache = result.summaryCache || {};
+      cache[videoId] = { error: error.message };
+      chrome.storage.local.set({ summaryCache: cache });
+      
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "icon.png",
+        title: "Summary Error",
+        message: `Failed to summarize video: ${error.message}`,
+      });
     });
   }
 }
